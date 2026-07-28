@@ -1,3 +1,6 @@
+# This file is not used in current pipeline
+# Alternative data loading and batching file
+
 from pathlib import Path
 
 import torch
