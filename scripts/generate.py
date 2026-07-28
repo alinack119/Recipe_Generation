@@ -1,3 +1,5 @@
+# Inlcudes the prompt and interactive generation
+
 import sys
 from pathlib import Path
 
@@ -12,11 +14,8 @@ from src.model import GPT
 from src.tokenizer import RecipeTokenizer
 from src.training_utils import generate
 
-
+# Ask user for ingredients
 def ask_for_ingredients():
-    """
-    Ask the user to enter ingredients separated by commas.
-    """
 
     print("\nEnter the ingredients you want to use.")
     print("Separate ingredients with commas.")
@@ -34,9 +33,6 @@ def ask_for_ingredients():
 
 
 def create_default_title(ingredients):
-    """
-    Create a basic title from the first three ingredients.
-    """
 
     main_ingredients = ingredients[:3]
 
@@ -48,10 +44,8 @@ def create_default_title(ingredients):
     return " and ".join(title_words) + " Recipe"
 
 
+# Build prompt matching format during training
 def build_recipe_prompt(title, ingredients):
-    """
-    Build a prompt matching the format used during training.
-    """
 
     ingredient_text = "\n".join(
         ingredients
@@ -66,11 +60,8 @@ def build_recipe_prompt(title, ingredients):
         "<DIRECTIONS>\n"
     )
 
-
+# Load checkpoint and generate recipe
 def generate_model(args):
-    """
-    Load a checkpoint and generate a recipe.
-    """
 
     if torch.cuda.is_available():
         device = "cuda"
@@ -83,11 +74,13 @@ def generate_model(args):
 
     tokenizer = RecipeTokenizer()
 
+    # load checkpoint
     checkpoint = torch.load(
         checkpoint_path,
         map_location=device
     )
 
+    # Recreate model architecture
     model = GPT(
         vocab_size=checkpoint["vocab_size"],
         context_size=checkpoint["context_size"],
@@ -96,6 +89,7 @@ def generate_model(args):
         n_layer=checkpoint["n_layer"]
     )
 
+    # Load learned weights
     model.load_state_dict(
         checkpoint["model_state_dict"]
     )
@@ -149,10 +143,12 @@ def generate_model(args):
         device=device
     ).unsqueeze(0)
 
+    # Find stopping token
     end_recipe_id = tokenizer.token_id(
         "<END_RECIPE>"
     )
 
+    # Generate
     with torch.no_grad():
         generated_tokens = generate(
             model=model,
@@ -162,6 +158,7 @@ def generate_model(args):
             stop_token_id=end_recipe_id
         )
 
+    # Decode
     generated_recipe = tokenizer.decode(
         generated_tokens[0].tolist()
     )
