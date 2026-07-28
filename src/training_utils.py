@@ -1,19 +1,18 @@
+# Code for batches, loss reporting, training, and generation
+# training and inference utilities
+
 import torch
 import torch.nn.functional as F
 
 
-# These will be assigned by train.py
+# These will be assigned by train.py 
 train_data = None
 val_data = None
 device = None
 
 
 def setup_data(training_data, validation_data, selected_device):
-    """
-    Give this file access to the training data,
-    validation data, and device.
-    """
-
+    
     global train_data
     global val_data
     global device
@@ -23,10 +22,8 @@ def setup_data(training_data, validation_data, selected_device):
     device = selected_device
 
 
+# Generate a small batch of input and target sequences
 def get_batch(split, batch_size, context_size):
-    """
-    Generate a small batch of input and target sequences.
-    """
 
     data = train_data if split == "train" else val_data
 
@@ -51,6 +48,7 @@ def get_batch(split, batch_size, context_size):
     return x, y
 
 
+# Calculate average loss on training and validation data
 @torch.no_grad()
 def estimate_loss(
     model,
@@ -58,9 +56,7 @@ def estimate_loss(
     context_size,
     eval_iters=100
 ):
-    """
-    Calculate average loss on training and validation data.
-    """
+
 
     out = {}
 
@@ -86,7 +82,7 @@ def estimate_loss(
 
     return out
 
-
+# Main optimization loop training the model
 def train(
     model,
     steps,
@@ -95,9 +91,7 @@ def train(
     learning_rate=1e-3,
     report_frequency=1000
 ):
-    """
-    Train the model.
-    """
+
 
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -105,14 +99,14 @@ def train(
     )
 
     for step in range(steps):
-        # Get a random training batch
+        # Get random training batch
         xb, yb = get_batch(
             "train",
             batch_size,
             context_size
         )
 
-        # Run the model
+        # Run model
         logits, loss = model(xb, yb)
 
         # Reset old gradients
@@ -143,6 +137,7 @@ def train(
             )
 
 
+# Generate new tokens one at a time
 @torch.no_grad()
 def generate(
     model,
@@ -151,20 +146,16 @@ def generate(
     number_of_tokens,
     stop_token_id=None
 ):
-    """
-    Generate new tokens one at a time.
-    """
 
     idx = start_idx
 
     for _ in range(number_of_tokens):
-        # Use only the most recent context
         idx_cond = idx[:, -context_size:]
 
         # Get model predictions
         logits, loss = model(idx_cond)
 
-        # Get prediction for the final position
+        # Prediction for final position
         logits = logits[:, -1, :]
 
         # Convert predictions to probabilities
