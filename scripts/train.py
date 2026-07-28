@@ -1,3 +1,5 @@
+# Build and train the model
+
 import sys
 from pathlib import Path
 
@@ -13,13 +15,9 @@ from src.tokenizer import RecipeTokenizer
 from src.training_utils import setup_data, train
 
 
+# Train the recipe transformer using settings received from the command line interface
 def train_model(args):
-    """
-    Train the recipe transformer using settings received
-    from the command-line interface.
-    """
 
-    # Select device
     if torch.cuda.is_available():
         device = "cuda"
     elif torch.backends.mps.is_available():
@@ -29,7 +27,7 @@ def train_model(args):
 
     torch.manual_seed(args.seed)
 
-    # Load processed recipe text
+    # Processed data
     with open(
         args.input,
         "r",
@@ -37,10 +35,9 @@ def train_model(args):
     ) as file:
         text = file.read()
 
-    # Create tokenizer
     tokenizer = RecipeTokenizer()
 
-    # Encode complete dataset
+    # Encoding
     encoded_text = tokenizer.encode(text)
 
     data = torch.tensor(
@@ -54,14 +51,14 @@ def train_model(args):
     train_data = data[:split_index]
     val_data = data[split_index:]
 
-    # Give utility functions access to data
+    # Stores tensors and selected device inside training_utils.py
     setup_data(
         train_data,
         val_data,
         device
     )
 
-    # Create transformer model
+    # transformer model
     model = GPT(
         vocab_size=tokenizer.vocab_size,
         n_embd=args.n_embd,
