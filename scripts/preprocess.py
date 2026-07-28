@@ -1,10 +1,12 @@
+# Transforms raw dataset into consistent strcuted text
+
 import ast
 from pathlib import Path
 
 import pandas as pd
 
 
-# Find the main project folder
+# Finds the main project folder
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # Input and output file locations
@@ -13,6 +15,7 @@ OUTPUT_CSV_PATH = PROJECT_ROOT / "data" / "processed" / "Recipe_Clean.csv"
 OUTPUT_TEXT_PATH = PROJECT_ROOT / "data" / "processed" / "recipes.txt"
 
 
+# Ensures ingredients and directions into strings
 def clean_list_text(value):
    
 
@@ -31,11 +34,8 @@ def clean_list_text(value):
 
     return str(value).strip()
 
-
+# Replace Unicode fraction symbols with regular text fractions
 def normalize_fractions(value):
-    """
-    Replace Unicode fraction symbols with regular text fractions.
-    """
 
     fraction_map = {
         "¼": "1/4",
@@ -58,13 +58,10 @@ def normalize_fractions(value):
         )
 
     return value.strip()
+   
 
-
+# Convert one dataframe row into the structured recipe format used for model training
 def format_recipe(row):
-    """
-    Convert one dataframe row into the structured
-    recipe format used for model training.
-    """
 
     return (
         "<RECIPE>\n"
@@ -77,14 +74,11 @@ def format_recipe(row):
     )
 
 
+# Coordinates preprocessing
 def main():
-    # Load original recipe data
     df = pd.read_csv(INPUT_PATH)
-
-    # Replace missing values with empty strings
     df = df.fillna("")
-
-    # Clean ingredients, directions, and recipe titles
+   
     df["ingredients"] = (
         df["ingredients"]
         .apply(clean_list_text)
@@ -102,18 +96,15 @@ def main():
         .apply(normalize_fractions)
     )
 
-    # Build the text representation of each recipe
     df["text"] = df.apply(
         format_recipe,
         axis=1,
     )
 
-    # Place <END_RECIPE> between recipes
     text = "\n\n<END_RECIPE>\n\n".join(
         df["text"].tolist()
     )
 
-    # Add one final ending token
     text = text + "\n\n<END_RECIPE>"
 
     # Remove unwanted symbols
@@ -155,8 +146,6 @@ def main():
     print(f"Number of recipes: {len(df):,}")
     print(f"Saved cleaned CSV to: {OUTPUT_CSV_PATH}")
     print(f"Saved training text to: {OUTPUT_TEXT_PATH}")
-
-    # Verify special-token counts
     print("\nSpecial-token counts:")
 
     for token in [
