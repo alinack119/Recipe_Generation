@@ -1,3 +1,6 @@
+# This file not used in current pipeline
+# Most funcitons incldued in argparse in command line interface in gpt.py
+
 from dataclasses import dataclass
 from pathlib import Path
 
