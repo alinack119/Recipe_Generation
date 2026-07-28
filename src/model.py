@@ -1,9 +1,16 @@
+# Core Transformer Architecture
+
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-
+# One self-attention head (which earliter tokens are relevent to current token)
 class Head(nn.Module):
+    '''
+    Query: what this position is looking for.
+    Key: what this position offers for matching.
+    Value: the information that can be passed forward.
+    '''
     def __init__(
         self,
         head_size,
@@ -66,7 +73,7 @@ class Head(nn.Module):
 
         return output
 
-
+# Create Multiple Attention Heads
 class MultiHeadAttention(nn.Module):
     def __init__(
         self,
@@ -93,6 +100,7 @@ class MultiHeadAttention(nn.Module):
         )
 
 
+# Transforms the information independently at every token position
 class FeedForward(nn.Module):
     def __init__(self, n_embd):
         super().__init__()
@@ -105,7 +113,7 @@ class FeedForward(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-
+# Multihead self attention + Feed-forward neural network 
 class Block(nn.Module):
     def __init__(
         self,
@@ -199,22 +207,15 @@ class GPT(nn.Module):
 
         logits = self.ln_head(x)
 
+        # Loss calculations
         if targets is not None:
             B, T, C = logits.shape
 
-            logits = logits.view(
-                B * T,
-                C
-            )
+            logits = logits.view(B * T, C)
 
-            targets = targets.view(
-                B * T
-            )
+            targets = targets.view(B * T)
 
-            loss = F.cross_entropy(
-                logits,
-                targets
-            )
+            loss = F.cross_entropy(logits, targets)
 
         else:
             loss = None
